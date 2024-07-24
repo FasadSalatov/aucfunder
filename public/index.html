@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Auction Flipper</title>
-  <link rel="stylesheet" href="https://cdn.datatables.net/1.11.3/css/jquery.dataTables.min.css">
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -13,12 +12,20 @@
     table {
       width: 100%;
       margin: 20px 0;
+      border-collapse: collapse;
+    }
+    table, th, td {
+      border: 1px solid black;
+    }
+    th, td {
+      padding: 8px;
+      text-align: left;
     }
   </style>
 </head>
 <body>
   <h1>Auction Flipper</h1>
-  <table id="auctionTable" class="display">
+  <table id="auctionTable">
     <thead>
       <tr>
         <th>Item Name</th>
@@ -32,11 +39,6 @@
     <tbody></tbody>
   </table>
 
-  <script
-  src="https://code.jquery.com/jquery-3.7.1.min.js"
-  integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo="
-  crossorigin="anonymous"></script>
-  <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js" integrity="sha256-VazP97ZCwtekAsvgPBSUwPFKdrwD3unUfSGVYrahUqU=" crossorigin="anonymous"></script>
   <script>
     async function fetchAuctions() {
       const response = await fetch('/api/auctions');
@@ -58,20 +60,24 @@
       });
     }
 
-    $(document).ready(async function() {
+    async function createTable() {
       const data = await fetchAuctions();
-      $('#auctionTable').DataTable({
-        data: data,
-        columns: [
-          { data: 'Item Name' },
-          { data: 'Hunted Price' },
-          { data: 'LBin' },
-          { data: 'Expected Profit' },
-          { data: 'Items on market' },
-          { data: 'Auction uuid' },
-        ]
+      const tableBody = document.querySelector('#auctionTable tbody');
+
+      data.forEach(item => {
+        const row = document.createElement('tr');
+
+        for (let key in item) {
+          const cell = document.createElement('td');
+          cell.textContent = item[key];
+          row.appendChild(cell);
+        }
+
+        tableBody.appendChild(row);
       });
-    });
+    }
+
+    document.addEventListener('DOMContentLoaded', createTable);
   </script>
 </body>
 </html>
