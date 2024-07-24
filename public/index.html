@@ -14,10 +14,16 @@
       width: 100%;
       margin: 20px 0;
     }
+    .admin-panel {
+      margin: 20px 0;
+    }
   </style>
 </head>
 <body>
   <h1>Auction Flipper</h1>
+  <div class="admin-panel">
+    <button id="updateTableBtn">Обновить таблицу</button>
+  </div>
   <table id="auctionTable" class="display">
     <thead>
       <tr>
@@ -27,6 +33,10 @@
         <th>Expected Profit</th>
         <th>Items on market</th>
         <th>Auction uuid</th>
+        <th>NPC Cost</th>
+        <th>Crafting Cost</th>
+        <th>Bazaar Buy Price</th>
+        <th>Bazaar Sell Price</th>
       </tr>
     </thead>
     <tbody></tbody>
@@ -57,12 +67,19 @@
           { data: 'Expected Profit' },
           { data: 'Items on market' },
           { data: 'Auction uuid' },
+          { data: 'NPC Cost' },
+          { data: 'Crafting Cost' },
+          { data: 'Bazaar Buy Price' },
+          { data: 'Bazaar Sell Price' },
         ]
       });
 
+      // Update the table on button click
+      $('#updateTableBtn').click(updateTable);
+
       // Update the table every 10 seconds
       updateTable();
-      setInterval(updateTable, 1000);
+      setInterval(updateTable, 10000);
     });
   </script>
 </body>

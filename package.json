@@ -7,9 +7,13 @@
     "start": "node server.js"
   },
   "dependencies": {
-    "axios": "^0.21.1",
+    "axios": "^0.21.4",
     "axios-proxy-fix": "^0.16.3",
-    "express": "^4.17.1"
+    "express": "^4.19.2",
+    "gyp": "^0.5.0",
+    "node-fetch": "^3.3.2",
+    "node-telegram-bot-api": "^0.66.0",
+    "python-shell": "^5.0.0"
   },
   "author": "",
   "license": "ISC"
