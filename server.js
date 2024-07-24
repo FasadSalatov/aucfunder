@@ -12,6 +12,13 @@ let NPC_COSTS = {};
 const app = express();
 app.use(express.static('public'));
 
+// Обслуживание статических файлов из папки public
+app.use(express.static(path.join(__dirname, 'public')));
+
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
 // Function to format numbers into human-readable format
 function humanFormat(num) {
   let magnitude = 0;
