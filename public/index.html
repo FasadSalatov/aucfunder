@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Auction Flipper</title>
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.11.3/css/jquery.dataTables.min.css">
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -12,20 +13,12 @@
     table {
       width: 100%;
       margin: 20px 0;
-      border-collapse: collapse;
-    }
-    table, th, td {
-      border: 1px solid black;
-    }
-    th, td {
-      padding: 8px;
-      text-align: left;
     }
   </style>
 </head>
 <body>
   <h1>Auction Flipper</h1>
-  <table id="auctionTable">
+  <table id="auctionTable" class="display">
     <thead>
       <tr>
         <th>Item Name</th>
@@ -39,45 +32,38 @@
     <tbody></tbody>
   </table>
 
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdn.datatables.net/1.11.3/js/jquery.dataTables.min.js"></script>
   <script>
     async function fetchAuctions() {
-      const response = await fetch('/api/auctions');
+      const response = await fetch('/auctions.json');
       const data = await response.json();
-      return Object.entries(data).map(([key, value]) => {
-        let product = value.map(item => parseFloat(item.split('|')[0]));
-        let productsUuid = value.map(item => item.split('|')[1]);
-        let cheapest = Math.min(...product);
-        let expensive = Math.max(...product);
-        let expectedProfit = expensive - cheapest;
-        return {
-          'Item Name': key,
-          'Hunted Price': cheapest,
-          'LBin': expensive,
-          'Expected Profit': expectedProfit,
-          'Items on market': product.length,
-          'Auction uuid': productsUuid[0]
-        };
-      });
+      return data.flipItems;
     }
 
-    async function createTable() {
+    async function updateTable() {
       const data = await fetchAuctions();
-      const tableBody = document.querySelector('#auctionTable tbody');
-
-      data.forEach(item => {
-        const row = document.createElement('tr');
-
-        for (let key in item) {
-          const cell = document.createElement('td');
-          cell.textContent = item[key];
-          row.appendChild(cell);
-        }
-
-        tableBody.appendChild(row);
-      });
+      const table = $('#auctionTable').DataTable();
+      table.clear().rows.add(data).draw();
     }
 
-    document.addEventListener('DOMContentLoaded', createTable);
+    $(document).ready(async function() {
+      $('#auctionTable').DataTable({
+        data: [],
+        columns: [
+          { data: 'Item Name' },
+          { data: 'Hunted Price' },
+          { data: 'LBin' },
+          { data: 'Expected Profit' },
+          { data: 'Items on market' },
+          { data: 'Auction uuid' },
+        ]
+      });
+
+      // Update the table every 10 seconds
+      updateTable();
+      setInterval(updateTable, 1000);
+    });
   </script>
 </body>
 </html>
