@@ -1,45 +1,23 @@
-const axios = require('axios');
+const express = require('express');
 const fs = require('fs');
 const path = require('path');
+const axios = require('axios');
+const app = express();
 
 let AUCTION_DATA = {};
-let last_updated_old = 0;
 const CRAFTING_COSTS = {};
 const ITEM_COSTS = {};
 let NPC_COSTS = {};
 
-// Функция для форматирования чисел в человекочитаемый формат
-function humanFormat(num) {
-  let magnitude = 0;
-  while (Math.abs(num) >= 1000) {
-    magnitude += 1;
-    num /= 1000.0;
-  }
-  return `${num.toFixed(2)}${['', 'K', 'M', 'B', 'T'][magnitude]}`;
-}
+app.use(express.static('public'));
 
-// Функция для получения количества страниц аукционов и проверки обновления
 async function getNumberOfAuctionsPagesAndIfUpdated() {
   const apiAuctionsUrl = 'https://api.hypixel.net/skyblock/auctions';
   const response = await axios.get(apiAuctionsUrl);
   const data = response.data;
-  const numberOfPages = data.totalPages;
-  if (numberOfPages > 120) {
-    throw new Error('Abusing hypixel API');
-  }
-  const lastUpdated = data.lastUpdated;
-  return { numberOfPages, lastUpdated };
+  return { numberOfPages: data.totalPages, lastUpdated: data.lastUpdated };
 }
 
-// Функция для получения последнего времени обновления
-async function getLastUpdated() {
-  const apiAuctionsUrl = 'https://api.hypixel.net/skyblock/auctions';
-  const response = await axios.get(apiAuctionsUrl);
-  const data = response.data;
-  return data.lastUpdated;
-}
-
-// Функция для получения аукционов на основе параметров
 async function getAuctions(page, reforgesList) {
   const apiAuctionsUrl = `https://api.hypixel.net/skyblock/auctions?page=${page}`;
   const response = await axios.get(apiAuctionsUrl);
@@ -49,13 +27,13 @@ async function getAuctions(page, reforgesList) {
     try {
       if (auction.bin) {
         let name = auction.item_name.toLowerCase();
-        name = name.replace(/\[\w*\s\d*\]/g, ''); // [lvl xx]
-        name = name.replace(/\s\s+/g, ' '); // двойные пробелы в один
-        name = name.replace(/[^\w\s]\W*$/, ''); // *** в конце имени
-        name = name.replace(/^\W\s/, ''); // странные символы в начале имени
+        name = name.replace(/\[\w*\s\d*\]/g, '');
+        name = name.replace(/\s\s+/g, ' ');
+        name = name.replace(/[^\w\s]\W*$/, '');
+        name = name.replace(/^\W\s/, '');
         reforgesList.forEach(reforge => {
           const regex = new RegExp(`\\b${reforge}\\b`, 'g');
-          name = name.replace(regex, ''); // удаление reforges
+          name = name.replace(regex, '');
         });
         name = name.trim();
 
@@ -98,7 +76,6 @@ async function getAuctions(page, reforgesList) {
   }
 }
 
-// Функция для получения цен на предметы с рынка
 async function getBazaarPrices() {
   const apiBazaarUrl = 'https://api.hypixel.net/skyblock/bazaar';
   const response = await axios.get(apiBazaarUrl);
@@ -112,10 +89,7 @@ async function getBazaarPrices() {
   }
 }
 
-// Функция для получения цен на предметы от NPC
 async function getNPCPrices() {
-  // Эта функция должна содержать логику получения цен на предметы от NPC
-  // Для простоты предположим, что она возвращает объект с примерами цен
   return {
     'dirt': 1,
     'cobblestone': 3,
@@ -123,7 +97,6 @@ async function getNPCPrices() {
   };
 }
 
-// Функция для расчета затрат на крафт
 async function calculateCraftingCosts(recipes) {
   for (let item in recipes) {
     let totalCost = 0;
@@ -135,7 +108,6 @@ async function calculateCraftingCosts(recipes) {
   }
 }
 
-// Функция для поиска предметов для флипа
 function findItemsToFlip(data) {
   let flipItems = {};
 
@@ -186,7 +158,6 @@ function findItemsToFlip(data) {
   AUCTION_DATA = {};
 }
 
-// Функция для расчета MAD Z Score
 function MAD_Z_Score(data, consistencyCorrection = 1.4826) {
   let median = data.reduce((a, b) => a + b, 0) / data.length;
   let deviationFromMed = data.map(d => Math.abs(d - median));
@@ -200,7 +171,6 @@ function MAD_Z_Score(data, consistencyCorrection = 1.4826) {
   }
 }
 
-// Функция для записи данных в CSV
 function writeDataToCSV(data, filename) {
   const filePath = path.join(__dirname, filename);
   const headers = Object.keys(data[0]).join(',');
@@ -210,17 +180,13 @@ function writeDataToCSV(data, filename) {
   fs.writeFileSync(filePath, csvContent, 'utf8');
 }
 
-// Функция для получения и хранения всех цен на предметы
 async function fetchAllItemPrices() {
   await getBazaarPrices();
   NPC_COSTS = await getNPCPrices();
 
-  // Получение рецептов крафта (предполагается функция `getCraftingRecipes`, которая возвращает список рецептов)
   const recipes = await getCraftingRecipes();
-
   await calculateCraftingCosts(recipes);
 
-  // Создание комбинированного объекта данных
   const combinedData = [];
   for (const item in ITEM_COSTS) {
     const npcCost = NPC_COSTS[item] || 0;
@@ -236,23 +202,19 @@ async function fetchAllItemPrices() {
     });
   }
 
-  writeDataToCSV(combinedData, 'item_prices.csv');
+  writeDataToCSV(combinedData, 'public/item_prices.csv');
 }
 
-// Функция для получения рецептов крафта (пример)
 async function getCraftingRecipes() {
-  // Эта функция должна быть заменена на реальную логику получения рецептов
   return {
     'enchanted_cobblestone': [
       { name: 'cobblestone', quantity: 160 },
     ],
-    // Добавьте больше рецептов здесь
   };
 }
 
-// Основная функция для выполнения всего процесса
 async function main() {
-  const reforgesList = ["Sharp", "Spicy", "Legendary"]; // Добавьте больше reforges, если нужно
+  const reforgesList = ["Sharp", "Spicy", "Legendary"];
   const { numberOfPages, lastUpdated } = await getNumberOfAuctionsPagesAndIfUpdated();
 
   for (let page = 0; page < numberOfPages; page++) {
@@ -260,11 +222,9 @@ async function main() {
   }
 
   findItemsToFlip(AUCTION_DATA);
-
   await fetchAllItemPrices();
 }
 
-// Функция для запуска основной функции с интервалом
 function startUpdating(interval = 60000) {
   main().catch(console.error);
   setInterval(() => {
@@ -272,4 +232,12 @@ function startUpdating(interval = 60000) {
   }, interval);
 }
 
-startUpdating(); // Начать процесс с интервалом по умолчанию 60 секунд
+startUpdating();
+
+app.get('/api/auctions', (req, res) => {
+  res.json(AUCTION_DATA);
+});
+
+app.listen(3000, () => {
+  console.log('Server is running on http://localhost:3000');
+});
